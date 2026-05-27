@@ -19,39 +19,19 @@ MAX_LEN = 600
 train_file_path = "train-data.tsv"
 test_file_path = "valid-data.tsv"
 
-# cell 3: clean up data
+# cell 3: get data and pop labels off
 
-train_dataset = tf.data.experimental.CsvDataset(
-    filenames=train_file_path,
-    record_defaults=[tf.string, tf.string],
-    header=False,     
-    field_delim='\t' 
-)
+headers = ["class", "msg"]
 
-test_dataset = tf.data.experimental.CsvDataset(
-    filenames=test_file_path,
-    record_defaults=[tf.string, tf.string],
-    header=False,     
-    field_delim='\t' 
-)
+train_data = pd.read_csv(train_file_path, sep='\t', names=headers)
+test_data = pd.read_csv(test_file_path, sep='\t', names=headers)
 
-# pop labels off & clean data
+train_dataset = train_data["msg"]
+train_labels = np.array([1 if label=="spam" else 0 for label in train_data["class"]])
+test_dataset = test_data["msg"]
+test_labels = np.array([1 if label=="spam" else 0 for label in test_data["class"]])
 
-def pad_and_truncate(text):
-    padding = tf.strings.repeat(" ", MAX_LEN)
-    padded_text = tf.strings.join([text, padding])
-    
-    return tf.strings.substr(padded_text, 0, MAX_LEN)
-
-train_labels = train_dataset.map(lambda *cols: cols[0])
-train_dataset = train_dataset.map(lambda *cols: cols[1])
-test_labels = test_dataset.map(lambda *cols: cols[0])
-test_dataset = test_dataset.map(lambda *cols: cols[1])
-
-train_dataset = train_dataset.map(pad_and_truncate)
-test_dataset = test_dataset.map(pad_and_truncate)
-
-# cell 4
+# cell 4: clean data
 
 
 
@@ -60,6 +40,20 @@ test_dataset = test_dataset.map(pad_and_truncate)
 def predict_message(pred_text):
     
     # Model logic goes here
+
+    vectorization_layer = keras.layers.TextVectorization(
+      max_tokens=MAX_LEN,
+      output_mode='int',
+      output_sequence_length=MAX_LEN
+    )
+    vectorization_layer.adapt(train_labels)
+    
+    model = keras.Sequential([
+      
+      keras.layers.Embedding(
+        
+      )
+    ])
     
     return (prediction)
 
