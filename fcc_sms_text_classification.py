@@ -11,6 +11,8 @@ import tensorflow_datasets as tfds
 import numpy as np
 import matplotlib.pyplot as plt
 
+MAX_LEN = 600
+
 !wget https://cdn.freecodecamp.org/project-data/sms/train-data.tsv
 !wget https://cdn.freecodecamp.org/project-data/sms/valid-data.tsv
 
@@ -33,16 +35,21 @@ test_dataset = tf.data.experimental.CsvDataset(
     field_delim='\t' 
 )
 
-# pop labels off
+# pop labels off & clean data
 
-def pop_column(*columns):
-    retained_columns = columns[:1]
-    return retained_columns
+def pad_and_truncate(text):
+    padding = tf.strings.repeat(" ", MAX_LEN)
+    padded_text = tf.strings.join([text, padding])
+    
+    return tf.strings.substr(padded_text, 0, MAX_LEN)
 
 train_labels = train_dataset.map(lambda *cols: cols[0])
 train_dataset = train_dataset.map(lambda *cols: cols[1])
 test_labels = test_dataset.map(lambda *cols: cols[0])
 test_dataset = test_dataset.map(lambda *cols: cols[1])
+
+train_dataset = train_dataset.map(pad_and_truncate)
+test_dataset = test_dataset.map(pad_and_truncate)
 
 # cell 4
 
