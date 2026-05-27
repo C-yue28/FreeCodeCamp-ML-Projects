@@ -20,11 +20,29 @@ test_file_path = "valid-data.tsv"
 # cell 3: clean up data
 
 train_dataset = tf.data.experimental.CsvDataset(
-    filenames=file_path,
-    record_defaults=record_defaults,
-    header=False,     # Skips header or assumes no header is present
-    field_delim='\t'  # Specifies Tab separation
+    filenames=train_file_path,
+    record_defaults=[tf.string, tf.string],
+    header=False,     
+    field_delim='\t' 
 )
+
+test_dataset = tf.data.experimental.CsvDataset(
+    filenames=test_file_path,
+    record_defaults=[tf.string, tf.string],
+    header=False,     
+    field_delim='\t' 
+)
+
+# pop labels off
+
+def pop_column(*columns):
+    retained_columns = columns[:1]
+    return retained_columns
+
+train_labels = train_dataset.map(lambda *cols: cols[0])
+train_dataset = train_dataset.map(lambda *cols: cols[1])
+test_labels = test_dataset.map(lambda *cols: cols[0])
+test_dataset = test_dataset.map(lambda *cols: cols[1])
 
 # cell 4
 
