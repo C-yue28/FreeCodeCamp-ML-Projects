@@ -19,7 +19,7 @@ MAX_LEN = 600
 train_file_path = "train-data.tsv"
 test_file_path = "valid-data.tsv"
 
-# cell 3: get data and pop labels off
+# cell 3: get data, separate labels, and clean messages
 
 headers = ["class", "msg"]
 
@@ -31,29 +31,45 @@ train_labels = np.array([1 if label=="spam" else 0 for label in train_data["clas
 test_dataset = test_data["msg"]
 test_labels = np.array([1 if label=="spam" else 0 for label in test_data["class"]])
 
-# cell 4: clean data
+vocabulary = {}
+for msg in train_dataset:
+  for word in msg.split():
+    if word not in vocabulary:
+      vocabulary[word] = 1
+    else:
+      vocabulary[word] += 1
 
+VOCAB_SIZE = len(vocabulary)
+MAX_LEN = len(max(train_message, key=lambda p: len(p.split())).split())
 
+# onehot_encoded_train = [one_hot(message, VOCAB_SIZE) for message in train_dataset]
+
+# train_dataset = keras.preprocessing.pad_sequences(train_dataset, maxlen=MAX_LEN, padding="post")
+# test_dataset = keras.preprocessing.pad_sequences(test_dataset, maxlen=MAX_LEN, padding="post")
+
+vectorizer = keras.layers.TextVectorization(max_tokens=VOCAB_SIZE, output_sequence_length=MAX_LEN)
+vectorizer.adapt(train_dataset)
+vectorized_train_dataset = vectorizer(train_dataset)
+vectorized_test_dataset = vectorizer(test_dataset)
+
+# cell 4: train model
+
+model = keras.Sequential([
+  keras.layers.Embedding(input_dim=VOCAB_SIZE, output_dim=128, input_length=MAX_LEN),
+  keras.layers.Flatten(),
+  keras.layers.Dense(1, activation="softmax")
+])
+
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['acc'])
+model.fit(vectorized_train_dataset, train_label, validation_data=(vectorized_test_dataset, test_label), epochs=100)
 
 # cell 5
 
 def predict_message(pred_text):
     
-    # Model logic goes here
-
-    vectorization_layer = keras.layers.TextVectorization(
-      max_tokens=MAX_LEN,
-      output_mode='int',
-      output_sequence_length=MAX_LEN
-    )
-    vectorization_layer.adapt(train_labels)
-    
-    model = keras.Sequential([
-      
-      keras.layers.Embedding(
-        
-      )
-    ])
+    vectorized_text = vectorizer(pred_text)
+    prediction = model.predict(vectorized_text)[0][0]
+    prediction = [prediction, "ham" if np.round(prediction) == 0 else "spam"]
     
     return (prediction)
 
